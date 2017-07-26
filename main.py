@@ -14,6 +14,7 @@ import config
 from config import app_data_source, field_dict, COLLECTION_NAME
 from logger import Logger
 from mongo import MongDb
+from topN import TopMaxHeap
 
 log = Logger('judgement_wenshu.log').get_logger()
 
@@ -39,14 +40,27 @@ class ProcessWorker(object):
         # 文件句柄
         self.file_handle = {}
 
+        # 最大堆
+        self.max_heap_manage = {}
+
+        # 最小堆
+        # self.min_heap_manage = {}
+
+        # 频率管理
+        self.hz_manage = {}
+
         # 获取启动时间 用于计算还需要多少时间完成扫描
         self.start_time = time.time()
         self.log.info("当前启动时间: start_time = {}".format(self.start_time))
 
         # 当前分析到的位置
         self.current_num = 0
+
         # 获取当前要统计的数据个数
         self.total_num = self.app_data_db.db[COLLECTION_NAME].count()
+        if self.total_num > config.MAX_CHECK_NUM:
+            self.total_num = config.MAX_CHECK_NUM
+
         self.log.info("当前需要统计的数据总数目为: {}".format(self.total_num))
 
     def __call__(self, *args, **kwargs):
@@ -137,7 +151,26 @@ class ProcessWorker(object):
 
     # 统计 数据topN
     def __process_statistics(self, _id, item_field, statistics_config, field_value):
-        pass
+
+        # 统计频率
+        if statistics_config == config.Statistics.FREQUENCY:
+            if field_value not in self.hz_manage[item_field]:
+                self.hz_manage[item_field][field_value] = 1
+            else:
+                self.hz_manage[item_field][field_value] += 1
+            return
+
+        # 统计长度
+        if statistics_config == config.Statistics.LENGTH:
+            self.max_heap_manage[item_field].push([len(field_value), _id])
+            # self.min_heap_manage[item_field].push([len(field_value), _id])
+            return
+
+        # 统计数值
+        if statistics_config == config.Statistics.VALUE:
+            self.max_heap_manage[item_field].push([field_value, _id])
+            # self.min_heap_manage[item_field].push([field_value, _id])
+            return
 
     # 处理每一个document
     def __process_item(self, item):
@@ -165,6 +198,43 @@ class ProcessWorker(object):
             if statistics is not None:
                 self.__process_statistics(_id, field, statistics, field_value)
 
+    # 输出频率结果
+    def hz_result(self, field_name, statistics):
+        sort_list = sorted(self.hz_manage[field_name].iteritems(), key=lambda a: a[1])
+        self.file_handle[field_name][statistics].write('数据频率统计: \r\n')
+        for item in sort_list:
+            self.file_handle[field_name][statistics].write('{} {}\r\n'.format(item[0], item[1]))
+
+    # 输出最大统计结果
+    def max_heap_result(self, field_name, statistics, _type):
+        sort_list = self.max_heap_manage[field_name].topk()
+        if _type == config.Statistics.LENGTH:
+            self.file_handle[field_name][statistics].write('最大长度排序: \r\n')
+        if _type == config.Statistics.VALUE:
+            self.file_handle[field_name][statistics].write('最大值排序: \r\n')
+        for item in sort_list:
+            self.file_handle[field_name][statistics].write('{} {}\r\n'.format(item[0], item[1]))
+
+    # 输出统计结果
+    def statistics_result(self):
+        self.log.info('开始输出统计结果: ')
+        for field_name, config_info in field_dict.iteritems():
+
+            # 遍历属性
+            for key, value in config_info.iteritems():
+                if isinstance(value, dict):
+                    continue
+
+                if value == config.Statistics.FREQUENCY:
+                    self.hz_result(field_name, key)
+                    continue
+
+                # 统计值
+                self.max_heap_result(field_name, key, value)
+                # self.max_heap_manage[field_name] = TopMaxHeap(config.TOP_NUM)
+                # self.min_heap_manage[field_name] = TopMinHeap(config.TOP_NUM)
+        self.log.info('输出统计结果完成...')
+
     # 执行程序
     def start_process(self):
         self.log.info("进入数据处理流程...")
@@ -176,6 +246,13 @@ class ProcessWorker(object):
 
             if self.current_num % 10000 == 0:
                 self.__predict_use_time()
+
+            # 如果达到最大需要统计的数目 则退出
+            if self.current_num >= self.total_num:
+                break
+
+        # 输出统计信息
+        self.statistics_result()
 
     # 初始化
     def init_folder(self):
@@ -214,7 +291,17 @@ class ProcessWorker(object):
 
                     continue
 
+                if key != config.STATISTICS:
+                    raise Exception('新加属性无法识别: key = {}'.format(key))
+
                 self.file_handle[field_name][key] = open(field_path + "/" + key + '.txt', 'w')
+                if value == config.Statistics.FREQUENCY:
+                    self.hz_manage[field_name] = {}
+                    continue
+
+                # 统计值
+                self.max_heap_manage[field_name] = TopMaxHeap(config.TOP_NUM)
+                # self.min_heap_manage[field_name] = TopMinHeap(config.TOP_NUM)
 
     # 关闭文件句柄
     def close(self):

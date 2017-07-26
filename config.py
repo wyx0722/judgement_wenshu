@@ -7,6 +7,8 @@
 @file: config.py.py
 @time: 2017/7/25 15:38
 """
+# 最大需要检查统计的数据量
+MAX_CHECK_NUM = 1000000
 
 # top数目
 TOP_NUM = 10
@@ -239,10 +241,8 @@ field_dict = {
                 Check.TYPE: basestring,
             }
         },
-
     },
     'litigants': {
-
         CHECK: {
             Check.TYPE: basestring,
             Check.LENGTH: {
