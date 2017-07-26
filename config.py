@@ -74,34 +74,34 @@ class Statistics(object):
 
 
 field_dict = {
-    '_record_id': {
-        # 32位定长
-        CHECK: {
-            Check.LENGTH: {
-                Check.Compare.EQUAL: 32
-            },
-            Check.TYPE: basestring,
-        }
-    },
-    '_in_time': {
-        # 时间格式 yyyy-MM-DD HH:mm:ss
-        CHECK: {
-            Check.TYPE: basestring,
-        },
-
-        # 统计大小
-        STATISTICS: Statistics.VALUE,
-        # 'CHECK': {
-        #     'format': ''
-        # }
-    },
-    '_utime': {
-        # 时间格式 yyyy-MM-DD HH:mm:ss
-        CHECK: {
-            Check.TYPE: basestring,
-        },
-        STATISTICS: Statistics.VALUE,
-    },
+    # '_record_id': {
+    #     # 32位定长
+    #     CHECK: {
+    #         Check.LENGTH: {
+    #             Check.Compare.EQUAL: 32
+    #         },
+    #         Check.TYPE: basestring,
+    #     }
+    # },
+    # '_in_time': {
+    #     # 时间格式 yyyy-MM-DD HH:mm:ss
+    #     CHECK: {
+    #         Check.TYPE: basestring,
+    #     },
+    #
+    #     # 统计大小
+    #     STATISTICS: Statistics.VALUE,
+    #     # 'CHECK': {
+    #     #     'format': ''
+    #     # }
+    # },
+    # '_utime': {
+    #     # 时间格式 yyyy-MM-DD HH:mm:ss
+    #     CHECK: {
+    #         Check.TYPE: basestring,
+    #     },
+    #     STATISTICS: Statistics.VALUE,
+    # },
     'all_money': {
         # double类型 判断数值类型是否正确 不能为负数 最大值统计  topN 统计
         CHECK: {
@@ -130,6 +130,9 @@ field_dict = {
         # 时间格式 yyyy-MM-DD 固定格式，如果不符合规格则判定为错误 topN 统计
         CHECK: {
             Check.TYPE: basestring,
+            Check.LENGTH: {
+                Check.Compare.LESSTHAN: 12,
+            },
         },
         STATISTICS: Statistics.VALUE,
     },
