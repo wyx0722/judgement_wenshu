@@ -29,10 +29,9 @@ class MongDb(object):
             sys.exit(1)
 
     def __del__(self):
-        self.log.info('int mongo __del__')
         self.db.logout()
         self.conn.close()
-        self.log.info('out mongo __del__')
+        self.log.info('mongodb 释放完成..')
         pass
 
     def check_connected(self):

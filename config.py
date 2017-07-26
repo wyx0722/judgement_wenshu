@@ -21,7 +21,7 @@ app_data_source = {
 }
 
 # 检查的表名称
-DOCUMENT_NAME = 'judgement_wenshu'
+COLLECTION_NAME = 'judgement_wenshu'
 
 field_dict = {
     '_record_id': {

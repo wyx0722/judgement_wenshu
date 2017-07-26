@@ -22,3 +22,4 @@ log/*.file
 !/config/proxies_200.txt
 /log/
 /logs/
+/result/
