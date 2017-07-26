@@ -79,37 +79,37 @@ class ProcessWorker(object):
     # 详细比较
     def detail_compare(self, _id, item_field, check_config, field_value, config_field):
         # 是否需要对数值进行检测
-        if config_field in check_config:
-            compare_info = check_config.get(config_field)
-            if not isinstance(compare_info, dict):
-                raise Exception('属性比较配置信息错误: _id = {} field = {} check_config = {}'.format(
-                    _id, item_field, check_config))
 
-            while True:
-                # 如果是判等，但是数值不相等 则记录下来
-                if config.Check.Compare.EQUAL in compare_info:
-                    judge_value = compare_info.get(config.Check.Compare.EQUAL)
-                    if field_value != judge_value:
-                        self.file_handle[item_field][config.CHECK][config_field].write(
-                            '{} {} not equal {}\r\n'.format(_id, field_value, judge_value))
-                    break
+        compare_info = check_config.get(config_field)
+        if not isinstance(compare_info, dict):
+            raise Exception('属性比较配置信息错误: _id = {} field = {} check_config = {}'.format(
+                _id, item_field, check_config))
 
-                # 如果是判断大于等于
-                if config.Check.Compare.GREATERTHAN in compare_info:
-                    judge_value = compare_info.get(config.Check.Compare.GREATERTHAN)
-                    if field_value < judge_value:
-                        self.file_handle[item_field][config.CHECK][config_field].write(
-                            '{} {} less than {}\r\n'.format(_id, field_value, judge_value))
-                    break
-
-                # 如果是小于等于
-                if config.Check.Compare.LESSTHAN in compare_info:
-                    judge_value = compare_info.get(config.Check.Compare.LESSTHAN)
-                    if field_value > judge_value:
-                        self.file_handle[item_field][config.CHECK][config_field].write(
-                            '{} {} great than {}\r\n'.format(_id, field_value, judge_value))
-                    break
+        while True:
+            # 如果是判等，但是数值不相等 则记录下来
+            if config.Check.Compare.EQUAL in compare_info:
+                judge_value = compare_info.get(config.Check.Compare.EQUAL)
+                if field_value != judge_value:
+                    self.file_handle[item_field][config.CHECK][config_field].write(
+                        '{} {} not equal {}\r\n'.format(_id, field_value, judge_value))
                 break
+
+            # 如果是判断大于等于
+            if config.Check.Compare.GREATERTHAN in compare_info:
+                judge_value = compare_info.get(config.Check.Compare.GREATERTHAN)
+                if field_value < judge_value:
+                    self.file_handle[item_field][config.CHECK][config_field].write(
+                        '{} {} less than {}\r\n'.format(_id, field_value, judge_value))
+                break
+
+            # 如果是小于等于
+            if config.Check.Compare.LESSTHAN in compare_info:
+                judge_value = compare_info.get(config.Check.Compare.LESSTHAN)
+                if field_value > judge_value:
+                    self.file_handle[item_field][config.CHECK][config_field].write(
+                        '{} {} great than {}\r\n'.format(_id, field_value, judge_value))
+                break
+            break
 
     # 检测 数据是否正确
     def __process_check(self, _id, item_field, check_config, field_value):
