@@ -8,10 +8,10 @@
 @time: 2017/7/25 15:38
 """
 # 最大需要检查统计的数据量
-MAX_CHECK_NUM = 1000000
+MAX_CHECK_NUM = 30000000
 
 # top数目
-TOP_NUM = 10
+TOP_NUM = 1000
 
 # 数据库连接信息
 app_data_source = {
