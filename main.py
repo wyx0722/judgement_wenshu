@@ -39,7 +39,7 @@ class ProcessWorker(object):
         self.file_handle = {}
 
         # 获取启动时间 用于计算还需要多少时间完成扫描
-        self.start_time = int(time.time())
+        self.start_time = time.time()
         self.log.info("当前启动时间: start_time = {}".format(self.start_time))
 
         # 当前分析到的位置
@@ -62,12 +62,27 @@ class ProcessWorker(object):
 
         self.log.info("结束 judgement_wenshu 数据分析程序.. ")
 
+    # 计算预计需要多长时间完成..
+    def __predict_use_time(self):
+        end_time = time.time()
+
+        use_time = end_time - self.start_time
+
+        if use_time <= 0:
+            return
+
+        total_time = int(self.total_num * use_time / self.current_num)
+        self.log.info('已耗费时间: {}s'.format(int(use_time)))
+        self.log.info('预计还需要耗时: {}s'.format(total_time - int(use_time)))
+
     # 执行程序
     def process(self):
         self.log.info("进入数据处理流程...")
-        pass
-        # for item in app_data_db.traverse_batch(DOCUMENT_NAME):
-        #     pass
+        for item in self.app_data_db.traverse_batch(COLLECTION_NAME):
+            self.current_num += 1
+
+            if self.current_num % 10000 == 0:
+                self.__predict_use_time()
 
     # 初始化
     def init_folder(self):
