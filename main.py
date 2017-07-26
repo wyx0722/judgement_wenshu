@@ -10,6 +10,7 @@
 import os
 import time
 
+import config
 from config import app_data_source, field_dict, COLLECTION_NAME
 from logger import Logger
 from mongo import MongDb
@@ -55,7 +56,7 @@ class ProcessWorker(object):
         self.init_folder()
 
         # 处理过程
-        self.process()
+        self.start_process()
 
         # 关闭文件信息
         self.close()
@@ -75,11 +76,48 @@ class ProcessWorker(object):
         self.log.info('已耗费时间: {}s'.format(int(use_time)))
         self.log.info('预计还需要耗时: {}s'.format(total_time - int(use_time)))
 
+    # 检测 数据是否正确
+    def __process_check(self, _id, check_config, field_value):
+        pass
+
+    # 统计 数据topN
+    def __process_statistics(self, _id, statistics_config, field_value):
+        pass
+
+    # 处理每一个document
+    def __process_item(self, item):
+        _id = item.get('_id')
+        if _id is None:
+            self.log.error('当前item没有_id属性: {}'.format(item))
+            return
+        _id = _id.__str__()
+        for field, value in field_dict.iteritems():
+            # 如果需要检测的字段没有在document
+            if field not in item:
+                # 把企业信息记录在not_found 中
+                self.file_handle[field][self.NOT_FOUND].write(_id + '\r\n')
+                continue
+
+            field_value = item.get(field)
+
+            # 判断是否由检测属性
+            check = value.get(config.CHECK)
+            if check is not None:
+                self.__process_check(_id, check, field_value)
+
+            # 判断是否由统计属性
+            statistics = value.get(config.STATISTICS)
+            if statistics is not None:
+                self.__process_statistics(_id, statistics, field_value)
+
     # 执行程序
-    def process(self):
+    def start_process(self):
         self.log.info("进入数据处理流程...")
         for item in self.app_data_db.traverse_batch(COLLECTION_NAME):
             self.current_num += 1
+
+            # 处理每个document
+            self.__process_item(item)
 
             if self.current_num % 10000 == 0:
                 self.__predict_use_time()
