@@ -34,7 +34,7 @@ class Check(object):
     # 文本长度
     LENGTH = 'length'
 
-    class Length(object):
+    class Compare(object):
         def __init__(self):
             pass
 
@@ -78,15 +78,15 @@ field_dict = {
         # 32位定长
         CHECK: {
             Check.LENGTH: {
-                Check.Length.EQUAL: 32
+                Check.Compare.EQUAL: 32
             },
-            Check.TYPE: str,
+            Check.TYPE: basestring,
         }
     },
     '_in_time': {
         # 时间格式 yyyy-MM-DD HH:mm:ss
         CHECK: {
-            Check.TYPE: str,
+            Check.TYPE: basestring,
         },
 
         # 统计大小
@@ -98,7 +98,7 @@ field_dict = {
     '_utime': {
         # 时间格式 yyyy-MM-DD HH:mm:ss
         CHECK: {
-            Check.TYPE: str,
+            Check.TYPE: basestring,
         },
         STATISTICS: Statistics.VALUE,
     },
@@ -106,7 +106,7 @@ field_dict = {
         # double类型 判断数值类型是否正确 不能为负数 最大值统计  topN 统计
         CHECK: {
             Check.VALUE: {
-                Check.Length.GREATERTHAN: 0
+                Check.Compare.GREATERTHAN: 0
             },
             Check.TYPE: float,
         },
@@ -115,21 +115,21 @@ field_dict = {
     'bulletin_date': {
         # 时间格式 yyyy-MM-DD HH:mm:ss
         CHECK: {
-            Check.TYPE: str,
+            Check.TYPE: basestring,
         },
         STATISTICS: Statistics.VALUE,
     },
     'case_cause': {
         # 普通文本内容 允许为空 长度无限制 topN 统计
         CHECK: {
-            Check.TYPE: str,
+            Check.TYPE: basestring,
         },
         STATISTICS: Statistics.LENGTH,
     },
     'case_date': {
         # 时间格式 yyyy-MM-DD 固定格式，如果不符合规格则判定为错误 topN 统计
         CHECK: {
-            Check.TYPE: str,
+            Check.TYPE: basestring,
         },
         STATISTICS: Statistics.VALUE,
     },
@@ -138,23 +138,23 @@ field_dict = {
 
         CHECK: {
             Check.LENGTH: {
-                Check.Length.LESSTHAN: 100
+                Check.Compare.LESSTHAN: 100
             },
-            Check.TYPE: str,
+            Check.TYPE: basestring,
         },
         STATISTICS: Statistics.LENGTH,
     },
     'case_name': {
         # 普通文本, 标题  长度topN 统计
         CHECK: {
-            Check.TYPE: str,
+            Check.TYPE: basestring,
         },
         STATISTICS: Statistics.LENGTH,
     },
     'case_type': {
         # 枚举类型
         CHECK: {
-            Check.TYPE: str,
+            Check.TYPE: basestring,
         },
         STATISTICS: Statistics.FREQUENCY,
     },
@@ -163,7 +163,7 @@ field_dict = {
         CHECK: {
             Check.TYPE: list,
             Check.ITEM: {
-                Check.TYPE: str,
+                Check.TYPE: basestring,
             }
         },
     },
@@ -179,9 +179,9 @@ field_dict = {
 
         CHECK: {
             Check.LENGTH: {
-                Check.Length.LESSTHAN: 100
+                Check.Compare.LESSTHAN: 100
             },
-            Check.TYPE: str,
+            Check.TYPE: basestring,
         },
         STATISTICS: Statistics.LENGTH,
     },
@@ -190,7 +190,7 @@ field_dict = {
         CHECK: {
             Check.TYPE: list,
             Check.ITEM: {
-                Check.TYPE: str,
+                Check.TYPE: basestring,
             }
         },
 
@@ -198,7 +198,7 @@ field_dict = {
     'doc_content': {
         # 文书  普通文本 长度统计
         CHECK: {
-            Check.TYPE: str,
+            Check.TYPE: basestring,
         },
         STATISTICS: Statistics.LENGTH,
     },
@@ -207,16 +207,16 @@ field_dict = {
 
         CHECK: {
             Check.LENGTH: {
-                Check.Length.LESSTHAN: 100
+                Check.Compare.LESSTHAN: 1000
             },
-            Check.TYPE: str,
+            Check.TYPE: basestring,
         },
         STATISTICS: Statistics.LENGTH,
     },
     'judge_content': {
         # 普通文本 长度统计
         CHECK: {
-            Check.TYPE: str,
+            Check.TYPE: basestring,
         },
         STATISTICS: Statistics.LENGTH,
     },
@@ -224,7 +224,7 @@ field_dict = {
         CHECK: {
             Check.TYPE: list,
             Check.ITEM: {
-                Check.TYPE: str,
+                Check.TYPE: basestring,
             }
         },
 
@@ -233,7 +233,7 @@ field_dict = {
         CHECK: {
             Check.TYPE: list,
             Check.ITEM: {
-                Check.TYPE: str,
+                Check.TYPE: basestring,
             }
         },
 
@@ -241,9 +241,9 @@ field_dict = {
     'litigants': {
 
         CHECK: {
-            Check.TYPE: str,
+            Check.TYPE: basestring,
             Check.LENGTH: {
-                Check.Length.LESSTHAN: 100
+                Check.Compare.LESSTHAN: 100
             }
         },
         STATISTICS: Statistics.LENGTH,
@@ -253,7 +253,7 @@ field_dict = {
         CHECK: {
             Check.TYPE: float,
             Check.VALUE: {
-                Check.Length.GREATERTHAN: 0
+                Check.Compare.GREATERTHAN: 0
             }
         },
         STATISTICS: Statistics.VALUE,
@@ -262,7 +262,7 @@ field_dict = {
         CHECK: {
             Check.TYPE: list,
             Check.ITEM: {
-                Check.TYPE: str,
+                Check.TYPE: basestring,
             }
         },
 
@@ -270,14 +270,14 @@ field_dict = {
     'procedure': {
         # 枚举类型
         CHECK: {
-            Check.TYPE: str,
+            Check.TYPE: basestring,
         },
         STATISTICS: Statistics.FREQUENCY,
     },
     'province': {
         # 枚举类型
         CHECK: {
-            Check.TYPE: str,
+            Check.TYPE: basestring,
         },
         STATISTICS: Statistics.FREQUENCY,
     },
@@ -286,7 +286,7 @@ field_dict = {
         CHECK: {
             Check.TYPE: list,
             Check.ITEM: {
-                Check.TYPE: str,
+                Check.TYPE: basestring,
             }
         },
 

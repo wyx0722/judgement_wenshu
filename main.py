@@ -76,12 +76,67 @@ class ProcessWorker(object):
         self.log.info('已耗费时间: {}s'.format(int(use_time)))
         self.log.info('预计还需要耗时: {}s'.format(total_time - int(use_time)))
 
+    # 详细比较
+    def detail_compare(self, _id, item_field, check_config, field_value, config_field):
+        # 是否需要对数值进行检测
+        if config_field in check_config:
+            compare_info = check_config.get(config_field)
+            if not isinstance(compare_info, dict):
+                raise Exception('属性比较配置信息错误: _id = {} field = {} check_config = {}'.format(
+                    _id, item_field, check_config))
+
+            while True:
+                # 如果是判等，但是数值不相等 则记录下来
+                if config.Check.Compare.EQUAL in compare_info:
+                    judge_value = compare_info.get(config.Check.Compare.EQUAL)
+                    if field_value != judge_value:
+                        self.file_handle[item_field][config.CHECK][config_field].write(
+                            '{} {} not equal {}\r\n'.format(_id, field_value, judge_value))
+                    break
+
+                # 如果是判断大于等于
+                if config.Check.Compare.GREATERTHAN in compare_info:
+                    judge_value = compare_info.get(config.Check.Compare.GREATERTHAN)
+                    if field_value < judge_value:
+                        self.file_handle[item_field][config.CHECK][config_field].write(
+                            '{} {} less than {}\r\n'.format(_id, field_value, judge_value))
+                    break
+
+                # 如果是小于等于
+                if config.Check.Compare.LESSTHAN in compare_info:
+                    judge_value = compare_info.get(config.Check.Compare.LESSTHAN)
+                    if field_value > judge_value:
+                        self.file_handle[item_field][config.CHECK][config_field].write(
+                            '{} {} great than {}\r\n'.format(_id, field_value, judge_value))
+                    break
+                break
+
     # 检测 数据是否正确
-    def __process_check(self, _id, check_config, field_value):
-        pass
+    def __process_check(self, _id, item_field, check_config, field_value):
+        # 判断是否有数据类型判断
+        if config.Check.TYPE in check_config:
+            # 如果数据类型不正确则记录下来
+            check_type = check_config.get(config.Check.TYPE)
+            if not isinstance(field_value, check_type):
+                self.file_handle[item_field][config.CHECK][config.Check.TYPE].write('{} type not {}\r\n'.format(
+                    _id, check_type))
+                # 如果类型都不正确则不需要进一步检查
+                return
+
+        # 是否需要对数值进行检测
+        if config.Check.VALUE in check_config:
+            self.detail_compare(_id, item_field, check_config, field_value, config.Check.VALUE)
+
+        # 是否需要对长度进行检测
+        if config.Check.LENGTH in check_config:
+            self.detail_compare(_id, item_field, check_config, len(field_value), config.Check.LENGTH)
+
+            # todo 是否需要对数组中的属性进行检测
+            # if config.Check.ITEM in check_config:
+            #     pass
 
     # 统计 数据topN
-    def __process_statistics(self, _id, statistics_config, field_value):
+    def __process_statistics(self, _id, field, statistics_config, field_value):
         pass
 
     # 处理每一个document
@@ -103,12 +158,12 @@ class ProcessWorker(object):
             # 判断是否由检测属性
             check = value.get(config.CHECK)
             if check is not None:
-                self.__process_check(_id, check, field_value)
+                self.__process_check(_id, field, check, field_value)
 
             # 判断是否由统计属性
             statistics = value.get(config.STATISTICS)
             if statistics is not None:
-                self.__process_statistics(_id, statistics, field_value)
+                self.__process_statistics(_id, field, statistics, field_value)
 
     # 执行程序
     def start_process(self):
@@ -183,8 +238,12 @@ class ProcessWorker(object):
 
 
 def main():
-    worker = ProcessWorker(log)
-    worker()
+    try:
+        worker = ProcessWorker(log)
+        worker()
+    except Exception as e:
+        log.error("异常退出...")
+        log.exception(e)
 
 
 if __name__ == '__main__':
