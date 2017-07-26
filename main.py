@@ -18,6 +18,9 @@ log = Logger('judgement_wenshu.log').get_logger()
 
 
 class ProcessWorker(object):
+    # 属性未找到定义
+    NOT_FOUND = 'not_found'
+
     # 工程根路径
     project_path = os.path.dirname(os.path.realpath(__file__))
 
@@ -86,6 +89,9 @@ class ProcessWorker(object):
                 raise Exception('终止检测...')
 
             self.file_handle[field_name] = {}
+
+            # 没有找到属性记录文件..
+            self.file_handle[field_name][self.NOT_FOUND] = open(field_path + "/" + self.NOT_FOUND + '.txt', 'w')
 
             # 遍历属性
             for key, value in config_info.iteritems():
