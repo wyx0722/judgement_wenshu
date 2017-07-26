@@ -136,7 +136,7 @@ class ProcessWorker(object):
             #     pass
 
     # 统计 数据topN
-    def __process_statistics(self, _id, field, statistics_config, field_value):
+    def __process_statistics(self, _id, item_field, statistics_config, field_value):
         pass
 
     # 处理每一个document
