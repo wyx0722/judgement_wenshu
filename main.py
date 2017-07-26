@@ -23,7 +23,10 @@ class ProcessWorker(object):
     # 结果目录
     RESULT_FOLDER = 'result'
 
-    def __init__(self):
+    def __init__(self, log):
+
+        self.log = log
+
         # 数据库访问
         self.app_data_db = MongDb(app_data_source['host'], app_data_source['port'], app_data_source['db'],
                                   app_data_source['username'], app_data_source['password'], log=log)
@@ -31,7 +34,7 @@ class ProcessWorker(object):
         self.file_handle = {}
 
     def __call__(self, *args, **kwargs):
-        log.info("启动 judgement_wenshu 数据分析程序.. ")
+        self.log.info("启动 judgement_wenshu 数据分析程序.. ")
 
         # 目录信息初始化
         self.init_folder()
@@ -42,7 +45,7 @@ class ProcessWorker(object):
         # 关闭文件信息
         self.close()
 
-        log.info("结束 judgement_wenshu 数据分析程序.. ")
+        self.log.info("结束 judgement_wenshu 数据分析程序.. ")
 
     # 执行程序
     def process(self):
@@ -63,7 +66,7 @@ class ProcessWorker(object):
                 os.makedirs(field_path)
 
             if not isinstance(config_info, dict):
-                log.error("配置信息错误: key = {} value 信息不是字典".format(field_name))
+                self.log.error("配置信息错误: key = {} value 信息不是字典".format(field_name))
                 raise Exception('终止检测...')
 
             # 遍历属性
@@ -79,7 +82,7 @@ class ProcessWorker(object):
 
 
 def main():
-    worker = ProcessWorker()
+    worker = ProcessWorker(log)
     worker()
 
 

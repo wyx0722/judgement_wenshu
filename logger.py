@@ -62,7 +62,7 @@ class Logger(object):
 
 
 if __name__ == '__main__':
-    log = Gsxtlogger('log.log').get_logger()
+    log = Logger('log.log').get_logger()
     log.info('text')
     log.warn('text')
     log.error('text')
