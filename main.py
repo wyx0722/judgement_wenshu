@@ -77,7 +77,7 @@ class ProcessWorker(object):
         self.log.info("当前需要统计的数据总数目为: {}".format(self.total_num))
 
     def __call__(self, *args, **kwargs):
-        self.log.info("启动 judgement_wenshu 数据分析程序.. ")
+        self.log.info("启动 {} 数据分析程序.. ".format(config.COLLECTION_NAME))
 
         # 目录信息初始化
         self.init_folder()
@@ -88,7 +88,7 @@ class ProcessWorker(object):
         # 关闭文件信息
         self.close()
 
-        self.log.info("结束 judgement_wenshu 数据分析程序.. ")
+        self.log.info("结束 {} 数据分析程序.. ".format(config.COLLECTION_NAME))
 
     # 计算预计需要多长时间完成..
     def __predict_use_time(self):
