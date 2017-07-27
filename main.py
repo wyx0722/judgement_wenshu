@@ -11,23 +11,35 @@ import os
 import time
 
 import config
-from config import app_data_source, field_dict, COLLECTION_NAME
+import rules
 from logger import Logger
 from mongo import MongDb
 from topN import TopMaxHeap
 
-log = Logger('judgement_wenshu.log').get_logger()
+log = Logger('data_analyse.log').get_logger()
 
 
 class ProcessWorker(object):
+    # 最大需要检查统计的数据量
+    MAX_CHECK_NUM = 80000000
+
+    # top数目
+    TOP_NUM = 1000
+
+    # 数据库连接信息
+    app_data_source = {
+        "host": "172.16.215.16",
+        "port": 40042,
+        "db": "app_data",
+        "username": "read",
+        "password": "read",
+    }
+
     # 属性未找到定义
     NOT_FOUND = 'not_found'
 
     # 工程根路径
     project_path = os.path.dirname(os.path.realpath(__file__))
-
-    # 结果目录
-    RESULT_FOLDER = 'result'
 
     def __init__(self, log):
 
@@ -35,8 +47,9 @@ class ProcessWorker(object):
         self.log = log
 
         # 数据库访问
-        self.app_data_db = MongDb(app_data_source['host'], app_data_source['port'], app_data_source['db'],
-                                  app_data_source['username'], app_data_source['password'], log=log)
+        self.app_data_db = MongDb(self.app_data_source['host'], self.app_data_source['port'],
+                                  self.app_data_source['db'], self.app_data_source['username'],
+                                  self.app_data_source['password'], log=log)
         # 文件句柄
         self.file_handle = {}
 
@@ -57,9 +70,9 @@ class ProcessWorker(object):
         self.current_num = 0
 
         # 获取当前要统计的数据个数
-        self.total_num = self.app_data_db.db[COLLECTION_NAME].count()
-        if self.total_num > config.MAX_CHECK_NUM:
-            self.total_num = config.MAX_CHECK_NUM
+        self.total_num = self.app_data_db.db[config.COLLECTION_NAME].count()
+        if self.total_num > self.MAX_CHECK_NUM:
+            self.total_num = self.MAX_CHECK_NUM
 
         self.log.info("当前需要统计的数据总数目为: {}".format(self.total_num))
 
@@ -101,26 +114,26 @@ class ProcessWorker(object):
 
         while True:
             # 如果是判等，但是数值不相等 则记录下来
-            if config.Check.Compare.EQUAL in compare_info:
-                judge_value = compare_info.get(config.Check.Compare.EQUAL)
+            if rules.Check.Compare.EQUAL in compare_info:
+                judge_value = compare_info.get(rules.Check.Compare.EQUAL)
                 if field_value != judge_value:
-                    self.file_handle[item_field][config.CHECK][config_field].write(
+                    self.file_handle[item_field][rules.CHECK][config_field].write(
                         '{} {} not equal {}\r\n'.format(_id, field_value, judge_value))
                 break
 
             # 如果是判断大于等于
-            if config.Check.Compare.GREATERTHAN in compare_info:
-                judge_value = compare_info.get(config.Check.Compare.GREATERTHAN)
+            if rules.Check.Compare.GREATERTHAN in compare_info:
+                judge_value = compare_info.get(rules.Check.Compare.GREATERTHAN)
                 if field_value < judge_value:
-                    self.file_handle[item_field][config.CHECK][config_field].write(
+                    self.file_handle[item_field][rules.CHECK][config_field].write(
                         '{} {} less than {}\r\n'.format(_id, field_value, judge_value))
                 break
 
             # 如果是小于等于
-            if config.Check.Compare.LESSTHAN in compare_info:
-                judge_value = compare_info.get(config.Check.Compare.LESSTHAN)
+            if rules.Check.Compare.LESSTHAN in compare_info:
+                judge_value = compare_info.get(rules.Check.Compare.LESSTHAN)
                 if field_value > judge_value:
-                    self.file_handle[item_field][config.CHECK][config_field].write(
+                    self.file_handle[item_field][rules.CHECK][config_field].write(
                         '{} {} great than {}\r\n'.format(_id, field_value, judge_value))
                 break
             break
@@ -128,32 +141,32 @@ class ProcessWorker(object):
     # 检测 数据是否正确
     def __process_check(self, _id, item_field, check_config, field_value):
         # 判断是否有数据类型判断
-        if config.Check.TYPE in check_config:
+        if rules.Check.TYPE in check_config:
             # 如果数据类型不正确则记录下来
-            check_type = check_config.get(config.Check.TYPE)
+            check_type = check_config.get(rules.Check.TYPE)
             if not isinstance(field_value, check_type):
-                self.file_handle[item_field][config.CHECK][config.Check.TYPE].write('{} type not {}\r\n'.format(
+                self.file_handle[item_field][rules.CHECK][rules.Check.TYPE].write('{} type not {}\r\n'.format(
                     _id, check_type))
                 # 如果类型都不正确则不需要进一步检查
                 return
 
         # 是否需要对数值进行检测
-        if config.Check.VALUE in check_config:
-            self.detail_compare(_id, item_field, check_config, field_value, config.Check.VALUE)
+        if rules.Check.VALUE in check_config:
+            self.detail_compare(_id, item_field, check_config, field_value, rules.Check.VALUE)
 
         # 是否需要对长度进行检测
-        if config.Check.LENGTH in check_config:
-            self.detail_compare(_id, item_field, check_config, len(field_value), config.Check.LENGTH)
+        if rules.Check.LENGTH in check_config:
+            self.detail_compare(_id, item_field, check_config, len(field_value), rules.Check.LENGTH)
 
             # todo 是否需要对数组中的属性进行检测
-            # if config.Check.ITEM in check_config:
+            # if rules.Check.ITEM in check_config:
             #     pass
 
     # 统计 数据topN
     def __process_statistics(self, _id, item_field, statistics_config, field_value):
 
         # 统计频率
-        if statistics_config == config.Statistics.FREQUENCY:
+        if statistics_config == rules.Statistics.FREQUENCY:
             if field_value not in self.hz_manage[item_field]:
                 self.hz_manage[item_field][field_value] = 1
             else:
@@ -161,13 +174,13 @@ class ProcessWorker(object):
             return
 
         # 统计长度
-        if statistics_config == config.Statistics.LENGTH:
+        if statistics_config == rules.Statistics.LENGTH:
             self.max_heap_manage[item_field].push([len(field_value), _id])
             # self.min_heap_manage[item_field].push([len(field_value), _id])
             return
 
         # 统计数值
-        if statistics_config == config.Statistics.VALUE:
+        if statistics_config == rules.Statistics.VALUE:
             self.max_heap_manage[item_field].push([field_value, _id])
             # self.min_heap_manage[item_field].push([field_value, _id])
             return
@@ -179,7 +192,7 @@ class ProcessWorker(object):
             self.log.error('当前item没有_id属性: {}'.format(item))
             return
         _id = _id.__str__()
-        for field, value in field_dict.iteritems():
+        for field, value in config.field_dict.iteritems():
             # 如果需要检测的字段没有在document
             if field not in item:
                 # 把企业信息记录在not_found 中
@@ -189,12 +202,12 @@ class ProcessWorker(object):
             field_value = item.get(field)
 
             # 判断是否由检测属性
-            check = value.get(config.CHECK)
+            check = value.get(rules.CHECK)
             if check is not None:
                 self.__process_check(_id, field, check, field_value)
 
             # 判断是否由统计属性
-            statistics = value.get(config.STATISTICS)
+            statistics = value.get(rules.STATISTICS)
             if statistics is not None:
                 self.__process_statistics(_id, field, statistics, field_value)
 
@@ -208,9 +221,9 @@ class ProcessWorker(object):
     # 输出最大统计结果
     def max_heap_result(self, field_name, statistics, _type):
         sort_list = self.max_heap_manage[field_name].topk()
-        if _type == config.Statistics.LENGTH:
+        if _type == rules.Statistics.LENGTH:
             self.file_handle[field_name][statistics].write('最大长度排序: \r\n')
-        if _type == config.Statistics.VALUE:
+        if _type == rules.Statistics.VALUE:
             self.file_handle[field_name][statistics].write('最大值排序: \r\n')
         for item in sort_list:
             self.file_handle[field_name][statistics].write('{} {}\r\n'.format(item[0], item[1]))
@@ -218,27 +231,27 @@ class ProcessWorker(object):
     # 输出统计结果
     def statistics_result(self):
         self.log.info('开始输出统计结果: ')
-        for field_name, config_info in field_dict.iteritems():
+        for field_name, config_info in config.field_dict.iteritems():
 
             # 遍历属性
             for key, value in config_info.iteritems():
                 if isinstance(value, dict):
                     continue
 
-                if value == config.Statistics.FREQUENCY:
+                if value == rules.Statistics.FREQUENCY:
                     self.hz_result(field_name, key)
                     continue
 
                 # 统计值
                 self.max_heap_result(field_name, key, value)
-                # self.max_heap_manage[field_name] = TopMaxHeap(config.TOP_NUM)
-                # self.min_heap_manage[field_name] = TopMinHeap(config.TOP_NUM)
+                # self.max_heap_manage[field_name] = TopMaxHeap(rules.TOP_NUM)
+                # self.min_heap_manage[field_name] = TopMinHeap(rules.TOP_NUM)
         self.log.info('输出统计结果完成...')
 
     # 执行程序
     def start_process(self):
         self.log.info("进入数据处理流程...")
-        for item in self.app_data_db.traverse_batch(COLLECTION_NAME):
+        for item in self.app_data_db.traverse_batch(config.COLLECTION_NAME):
             self.current_num += 1
 
             # 处理每个document
@@ -259,12 +272,12 @@ class ProcessWorker(object):
 
         self.log.info('初始化文件夹以及文件句柄...')
 
-        result_path = self.project_path + "/" + self.RESULT_FOLDER
+        result_path = self.project_path + "/" + config.COLLECTION_NAME
         # 创建结果目录
         if not os.path.exists(result_path):
             os.makedirs(result_path)
 
-        for field_name, config_info in field_dict.iteritems():
+        for field_name, config_info in config.field_dict.iteritems():
             field_path = result_path + "/" + field_name
             if not os.path.exists(field_path):
                 os.makedirs(field_path)
@@ -291,16 +304,16 @@ class ProcessWorker(object):
 
                     continue
 
-                if key != config.STATISTICS:
+                if key != rules.STATISTICS:
                     raise Exception('新加属性无法识别: key = {}'.format(key))
 
                 self.file_handle[field_name][key] = open(field_path + "/" + key + '.txt', 'w')
-                if value == config.Statistics.FREQUENCY:
+                if value == rules.Statistics.FREQUENCY:
                     self.hz_manage[field_name] = {}
                     continue
 
                 # 统计值
-                self.max_heap_manage[field_name] = TopMaxHeap(config.TOP_NUM)
+                self.max_heap_manage[field_name] = TopMaxHeap(self.TOP_NUM)
                 # self.min_heap_manage[field_name] = TopMinHeap(config.TOP_NUM)
 
     # 关闭文件句柄
