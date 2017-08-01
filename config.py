@@ -9,7 +9,7 @@
 """
 import rules
 
-COLLECTION_NAME = 'bulletin'
+COLLECTION_NAME = 'judge_process'
 
 field_dict = {
     'status': {
